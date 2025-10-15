@@ -1,0 +1,8 @@
+bin/
+obj/
+messenger.db
+appsettings.Development.json
+.vs/
+.vscode/
+*.user
+Properties/launchSettings.json
