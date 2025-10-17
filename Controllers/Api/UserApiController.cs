@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MessengerApp.Data;
 using MessengerApp.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MessengerApp.Controllers.Api
 {
     [Route("api/user")]
     [ApiController]
+    [Authorize] // 🔐 теперь всё API защищено — требует логин
     public class UserApiController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -16,7 +18,7 @@ namespace MessengerApp.Controllers.Api
             _context = context;
         }
 
-        // GET: api/user
+        // -------------------- GET: api/user --------------------
         [HttpGet]
         public async Task<ActionResult<IEnumerable<User>>> GetUsers()
         {
@@ -25,7 +27,7 @@ namespace MessengerApp.Controllers.Api
                 .ToListAsync();
         }
 
-        // GET: api/user/5
+        // -------------------- GET: api/user/5 --------------------
         [HttpGet("{id}")]
         public async Task<ActionResult<User>> GetUser(int id)
         {
@@ -37,12 +39,15 @@ namespace MessengerApp.Controllers.Api
             return user;
         }
 
-        // POST: api/user
+        // -------------------- POST: api/user --------------------
+        // Регистрация через API — разрешена без логина
+        [AllowAnonymous] // ✅ можно вызывать без авторизации
         [HttpPost]
         public async Task<ActionResult<User>> CreateUser(User user)
         {
             user.CreatedAt = DateTime.UtcNow;
             user.IsActive = true;
+            user.ModerationStatus = "Pending"; // 🚦 новые — на модерации
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
@@ -50,7 +55,8 @@ namespace MessengerApp.Controllers.Api
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
         }
 
-        // PUT: api/user/5
+        // -------------------- PUT: api/user/5 --------------------
+        // Редактировать — можно только авторизованным
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateUser(int id, User updatedUser)
         {
@@ -64,12 +70,13 @@ namespace MessengerApp.Controllers.Api
             user.Username = updatedUser.Username;
             user.DepartmentId = updatedUser.DepartmentId;
             user.PasswordHash = updatedUser.PasswordHash;
-
             await _context.SaveChangesAsync();
             return NoContent();
         }
 
-        // DELETE (soft delete): api/user/5
+        // -------------------- DELETE (soft delete): api/user/5 --------------------
+        // Мягкое удаление — доступно только модераторам / администраторам
+        [Authorize(Roles = "Admin,Moderator")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> SoftDeleteUser(int id)
         {

@@ -1,0 +1,65 @@
+@model IEnumerable<MessengerApp.Models.User>
+
+@{
+    ViewData["Title"] = "Модерация пользователей";
+}
+
+<h2 class="mb-3">Модерация пользователей</h2>
+
+@if (TempData["Message"] != null)
+{
+    <div class="alert alert-success">@TempData["Message"]</div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Нет пользователей, ожидающих подтверждения.</div>
+}
+else
+{
+    <table class="table table-bordered table-striped align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Логин</th>
+                <th>Имя в системе</th>
+                <th>Отдел</th>
+                <th>Дата регистрации</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach (var user in Model)
+        {
+            <tr>
+                <td>@user.Username</td>
+                <td>@user.DisplayName</td>
+                <td>@user.Department?.Name</td>
+                <td>@user.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                <td class="d-flex gap-2">
+                    <form asp-action="Approve" method="post" class="d-inline">
+                        <input type="hidden" name="id" value="@user.Id" />
+                        <button class="btn btn-success btn-sm" type="submit">Одобрить</button>
+                    </form>
+
+                    <form asp-action="Reject" method="post" class="d-inline" onsubmit="return confirmReject(this);">
+                        <input type="hidden" name="id" value="@user.Id" />
+                        <input type="hidden" name="comment" />
+                        <button class="btn btn-danger btn-sm" type="submit">Отклонить</button>
+                    </form>
+                </td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@section Scripts {
+    <script>
+        function confirmReject(form) {
+            const comment = prompt("Введите причину отклонения:");
+            if (comment === null) return false; // отмена
+            form.querySelector('input[name="comment"]').value = comment;
+            return true;
+        }
+    </script>
+}
