@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MessengerApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251017082259_AddDepartmentsTable")]
-    partial class AddDepartmentsTable
+    [Migration("20251018204109_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -59,6 +59,38 @@ namespace MessengerApp.Migrations
                         {
                             Id = 5,
                             Name = "Регистратура"
+                        });
+                });
+
+            modelBuilder.Entity("MessengerApp.Models.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Moderator"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "User"
                         });
                 });
 
@@ -109,6 +141,21 @@ namespace MessengerApp.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("MessengerApp.Models.UserRole", b =>
+                {
+                    b.Property<int>("UserId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("UserId", "RoleId");
+
+                    b.HasIndex("RoleId");
+
+                    b.ToTable("UserRoles");
+                });
+
             modelBuilder.Entity("MessengerApp.Models.User", b =>
                 {
                     b.HasOne("MessengerApp.Models.Department", "Department")
@@ -120,9 +167,33 @@ namespace MessengerApp.Migrations
                     b.Navigation("Department");
                 });
 
+            modelBuilder.Entity("MessengerApp.Models.UserRole", b =>
+                {
+                    b.HasOne("MessengerApp.Models.Role", "Role")
+                        .WithMany("UserRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("MessengerApp.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("MessengerApp.Models.Department", b =>
                 {
                     b.Navigation("Users");
+                });
+
+            modelBuilder.Entity("MessengerApp.Models.Role", b =>
+                {
+                    b.Navigation("UserRoles");
                 });
 #pragma warning restore 612, 618
         }

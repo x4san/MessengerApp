@@ -50,7 +50,8 @@ namespace MessengerApp.Controllers
                 PasswordHash = HashPassword(password),
                 DisplayName = displayName,
                 DepartmentId = departmentId,
-                CreatedAt = DateTime.Now,
+                CreatedAt = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
+                         DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second),
                 IsActive = true,
                 ModerationStatus = "Approved"
             };

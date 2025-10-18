@@ -11,8 +11,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MessengerApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251018104628_AddRolesAndUserRoles")]
-    partial class AddRolesAndUserRoles
+    [Migration("20251018204821_AddDefaultUsersFixed")]
+    partial class AddDefaultUsersFixed
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -32,7 +32,7 @@ namespace MessengerApp.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Department", (string)null);
+                    b.ToTable("Department");
 
                     b.HasData(
                         new
@@ -139,6 +139,41 @@ namespace MessengerApp.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DepartmentId = 1,
+                            DisplayName = "Администратор",
+                            IsActive = true,
+                            ModerationStatus = "Approved",
+                            PasswordHash = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+                            Username = "admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DepartmentId = 1,
+                            DisplayName = "Модератор",
+                            IsActive = true,
+                            ModerationStatus = "Approved",
+                            PasswordHash = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+                            Username = "mod"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            DepartmentId = 1,
+                            DisplayName = "Пользователь",
+                            IsActive = true,
+                            ModerationStatus = "Approved",
+                            PasswordHash = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3",
+                            Username = "user"
+                        });
                 });
 
             modelBuilder.Entity("MessengerApp.Models.UserRole", b =>
@@ -154,6 +189,23 @@ namespace MessengerApp.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("UserRoles");
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = 1,
+                            RoleId = 1
+                        },
+                        new
+                        {
+                            UserId = 2,
+                            RoleId = 2
+                        },
+                        new
+                        {
+                            UserId = 3,
+                            RoleId = 3
+                        });
                 });
 
             modelBuilder.Entity("MessengerApp.Models.User", b =>
