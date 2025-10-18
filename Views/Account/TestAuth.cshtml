@@ -1,0 +1,75 @@
+@{
+    ViewData["Title"] = "Тест авторизации";
+}
+
+<h2>🔐 Тест авторизации</h2>
+
+@if (User.Identity != null && User.Identity.IsAuthenticated)
+{
+    <h3>Привет, @User.Identity.Name!</h3>
+
+    <p>
+        Ваша роль:
+        @if (User.IsInRole("Admin")) { <b>Администратор</b> }
+        else if (User.IsInRole("Moderator")) { <b>Модератор</b> }
+        else if (User.IsInRole("User")) { <b>Пользователь</b> }
+        else { <b>Неизвестная</b> }
+    </p>
+
+    <form method="post" asp-action="Logout">
+        <button type="submit">🚪 Выйти</button>
+    </form>
+}
+else
+{
+    <div style="display:flex; gap:50px;">
+        <div>
+            <h3>Регистрация</h3>
+            <form method="post" asp-action="Register">
+                <label>Логин:</label><br />
+                <input type="text" name="username" required /><br />
+
+                <label>Пароль:</label><br />
+                <input type="password" name="password" required /><br />
+
+                <label>Подтверждение:</label><br />
+                <input type="password" name="confirmPassword" required /><br />
+
+                <label>Имя:</label><br />
+                <input type="text" name="displayName" required /><br />
+
+                <label>Отдел:</label><br />
+                <select name="departmentId">
+                    @foreach (var dep in ViewBag.Departments)
+                    {
+                        <option value="@dep.Id">@dep.Name</option>
+                    }
+                </select><br />
+
+                <button type="submit">Зарегистрироваться</button>
+            </form>
+        </div>
+
+        <div>
+            <h3>Вход</h3>
+            <form method="post" asp-action="Login">
+                <label>Логин:</label><br />
+                <input type="text" name="username" required /><br />
+
+                <label>Пароль:</label><br />
+                <input type="password" name="password" required /><br />
+
+                <button type="submit">Войти</button>
+            </form>
+        </div>
+    </div>
+}
+
+@if (ViewBag.Error != null)
+{
+    <p style="color:red">@ViewBag.Error</p>
+}
+@if (ViewBag.Message != null)
+{
+    <p style="color:green">@ViewBag.Message</p>
+}

@@ -9,7 +9,7 @@ namespace MessengerApp.Data
             : base(options) { }
 
         public DbSet<User> Users => Set<User>();
-        public DbSet<Department> Departments => Set<Department>();
+        public DbSet<Department> Department => Set<Department>();
         public DbSet<Role> Roles => Set<Role>();
         public DbSet<UserRole> UserRoles => Set<UserRole>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -37,7 +37,7 @@ namespace MessengerApp.Data
                 new Department { Id = 4, Name = "Рентгенология" },
                 new Department { Id = 5, Name = "Регистратура" }
             );
-            
+
             modelBuilder.Entity<Role>().HasData(
                 new Role { Id = 1, Name = "Admin" },
                 new Role { Id = 2, Name = "Moderator" },
