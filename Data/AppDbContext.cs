@@ -9,7 +9,9 @@ namespace MessengerApp.Data
             : base(options) { }
 
         public DbSet<User> Users => Set<User>();
-
+        public DbSet<Department> Departments => Set<Department>();
+        public DbSet<Role> Roles => Set<Role>();
+        public DbSet<UserRole> UserRoles => Set<UserRole>();
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -27,7 +29,7 @@ namespace MessengerApp.Data
                     .WithOne(u => u.Department)
                     .HasForeignKey(u => u.DepartmentId)
                     .OnDelete(DeleteBehavior.Restrict);
-            
+
             modelBuilder.Entity<Department>().HasData(
                 new Department { Id = 1, Name = "Терапия" },
                 new Department { Id = 2, Name = "Хирургия" },
@@ -35,6 +37,15 @@ namespace MessengerApp.Data
                 new Department { Id = 4, Name = "Рентгенология" },
                 new Department { Id = 5, Name = "Регистратура" }
             );
+            
+            modelBuilder.Entity<Role>().HasData(
+                new Role { Id = 1, Name = "Admin" },
+                new Role { Id = 2, Name = "Moderator" },
+                new Role { Id = 3, Name = "User" }
+            );
+
+            modelBuilder.Entity<UserRole>()
+                .HasKey(ur => new { ur.UserId, ur.RoleId });
 
         }
     }
