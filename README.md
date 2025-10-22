@@ -17,3 +17,5 @@ SignalR чат
 
 dotnet ef migrations add [название]
 dotnet ef database update
+
+git push origin [имя ветки]
