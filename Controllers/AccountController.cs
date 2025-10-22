@@ -76,7 +76,7 @@ namespace MessengerApp.Controllers
 
             //------------------------------------------------------------------------------------###
             //return RedirectToAction("Login");
-            return View();
+            return RedirectToAction("TestAuth");
             //------------------------------------------------------------------------------------###
 
         }
@@ -129,8 +129,8 @@ namespace MessengerApp.Controllers
 
 
             //------------------------------------------------------------------------------------###
-            return RedirectToAction("Index", "Home");
-            //return View();
+            //return RedirectToAction("Index", "Home");
+            return RedirectToAction("TestAuth");
             //------------------------------------------------------------------------------------###
 
 
