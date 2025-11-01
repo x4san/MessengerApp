@@ -3,6 +3,7 @@ using System;
 using MessengerApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MessengerApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251101144617_eblan")]
+    partial class eblan
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
@@ -46,44 +49,6 @@ namespace MessengerApp.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Chats");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = true,
-                            IsGroup = true,
-                            IsPrivate = false,
-                            Name = "Общий чат"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = true,
-                            IsGroup = false,
-                            IsPrivate = false,
-                            Name = "ЛС: Администратор ↔ Модератор"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = true,
-                            IsGroup = false,
-                            IsPrivate = false,
-                            Name = "ЛС: Администратор ↔ Пользователь"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = true,
-                            IsGroup = false,
-                            IsPrivate = false,
-                            Name = "ЛС: Модератор ↔ Пользователь"
-                        });
                 });
 
             modelBuilder.Entity("MessengerApp.Models.Department", b =>
@@ -304,71 +269,6 @@ namespace MessengerApp.Migrations
                     b.HasIndex("ChatId");
 
                     b.ToTable("UserChats");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 1,
-                            ChatId = 1,
-                            IsAdmin = true,
-                            JoinedAt = new DateTime(2025, 11, 1, 14, 59, 13, 44, DateTimeKind.Utc).AddTicks(323)
-                        },
-                        new
-                        {
-                            UserId = 2,
-                            ChatId = 1,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 1, 14, 59, 13, 44, DateTimeKind.Utc).AddTicks(1096)
-                        },
-                        new
-                        {
-                            UserId = 3,
-                            ChatId = 1,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 1, 14, 59, 13, 44, DateTimeKind.Utc).AddTicks(1098)
-                        },
-                        new
-                        {
-                            UserId = 1,
-                            ChatId = 2,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 1, 14, 59, 13, 44, DateTimeKind.Utc).AddTicks(1098)
-                        },
-                        new
-                        {
-                            UserId = 2,
-                            ChatId = 2,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 1, 14, 59, 13, 44, DateTimeKind.Utc).AddTicks(1099)
-                        },
-                        new
-                        {
-                            UserId = 1,
-                            ChatId = 3,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 1, 14, 59, 13, 44, DateTimeKind.Utc).AddTicks(1100)
-                        },
-                        new
-                        {
-                            UserId = 3,
-                            ChatId = 3,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 1, 14, 59, 13, 44, DateTimeKind.Utc).AddTicks(1100)
-                        },
-                        new
-                        {
-                            UserId = 2,
-                            ChatId = 4,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 1, 14, 59, 13, 44, DateTimeKind.Utc).AddTicks(1101)
-                        },
-                        new
-                        {
-                            UserId = 3,
-                            ChatId = 4,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 1, 14, 59, 13, 44, DateTimeKind.Utc).AddTicks(1102)
-                        });
                 });
 
             modelBuilder.Entity("MessengerApp.Models.UserRole", b =>

@@ -20,5 +20,6 @@ namespace MessengerApp.Models
         // Навигационные свойства
         //public ICollection<Message>? Messages { get; set; }
         //public ICollection<ChatUser>? ChatUsers { get; set; }
+        public ICollection<UserChat> UserChats { get; set; } = new List<UserChat>();
     }
 }

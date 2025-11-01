@@ -1,31 +1,45 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using MessengerApp.Models;
+using Microsoft.AspNetCore.Authorization;
+using MessengerApp.Data;
+using Microsoft.EntityFrameworkCore;
 
-namespace MessengerApp.Controllers;
-
-public class HomeController : Controller
+namespace MessengerApp.Controllers
 {
-    private readonly ILogger<HomeController> _logger;
-
-    public HomeController(ILogger<HomeController> logger)
+    [Authorize]
+    public class HomeController : Controller
     {
-        _logger = logger;
-    }
+        private readonly AppDbContext _context;
 
-    public IActionResult Index()
-    {
-        return View();
-    }
+        public HomeController(AppDbContext context)
+        {
+            _context = context;
+        }
 
-    public IActionResult Privacy()
-    {
-        return View();
-    }
+        // Главная страница чатов
+        public async Task<IActionResult> Index()
+        {  
+            // Если пользователь не авторизован → редирект на TestAuth
+            if (!User.Identity.IsAuthenticated)
+                return RedirectToAction("TestAuth", "Account");
 
-    [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-    public IActionResult Error()
-    {
-        return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            var username = User.Identity?.Name;
+            var user = await _context.Users
+                .Include(u => u.UserChats)
+                .ThenInclude(uc => uc.Chat)
+                .FirstOrDefaultAsync(u => u.Username == username);
+
+            if (user == null)
+                return RedirectToAction("TestAuth", "Account");
+
+            // Список чатов текущего пользователя
+            var chats = user.UserChats
+                .Where(uc => uc.Chat.IsActive)
+                .Select(uc => uc.Chat)
+                .ToList();
+
+            ViewBag.DisplayName = user.DisplayName ?? user.Username;
+
+            return View(chats); // 👈 передаём список чатов в Razor
+        }
     }
 }
