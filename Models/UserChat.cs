@@ -14,6 +14,7 @@ namespace MessengerApp.Models
         public Chat Chat { get; set; }
 
         public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? LastReadAt { get; set; } = DateTime.UtcNow;
 
         // 👑 Админ / модератор
         public bool IsAdmin { get; set; } = false;

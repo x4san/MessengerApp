@@ -38,6 +38,7 @@ namespace MessengerApp.Controllers
 
             ViewBag.DisplayName = user.DisplayName ?? user.Username;
             ViewBag.Username = user.Username;
+            ViewBag.Bio = user.Bio;
 
             // Формируем список чатов с корректными названиями
             var chatList = user.UserChats
