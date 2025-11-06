@@ -21,7 +21,7 @@ namespace MessengerApp.Controllers
         {
             // Если пользователь не авторизован → редирект на TestAuth
             if (!User.Identity.IsAuthenticated)
-                return RedirectToAction("TestAuth", "Account");
+                return RedirectToAction("Login", "Account");
 
             var username = User.Identity?.Name;
 
@@ -34,7 +34,7 @@ namespace MessengerApp.Controllers
                 .FirstOrDefaultAsync(u => u.Username == username);
 
             if (user == null)
-                return RedirectToAction("TestAuth", "Account");
+                return RedirectToAction("Login", "Account");
 
             ViewBag.DisplayName = user.DisplayName ?? user.Username;
             ViewBag.Username = user.Username;

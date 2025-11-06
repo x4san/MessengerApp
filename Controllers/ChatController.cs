@@ -20,7 +20,6 @@ namespace MessengerApp.Controllers
             if (string.IsNullOrEmpty(username))
                 return BadRequest("Не указан username.");
 
-            // Находим пользователя и подгружаем его чаты с участниками
             var user = await _context.Users
                 .Include(u => u.UserChats)
                     .ThenInclude(uc => uc.Chat)
@@ -31,35 +30,24 @@ namespace MessengerApp.Controllers
             if (user == null)
                 return NotFound("Пользователь не найден.");
 
-            // Формируем список чатов
             var chats = user.UserChats
                 .Where(uc => uc.Chat.IsActive)
                 .Select(uc =>
                 {
                     var chat = uc.Chat;
-
-                    // Если это личный чат → показываем имя собеседника
                     string chatName;
+
                     if (!chat.IsGroup)
                     {
                         var otherUser = chat.UserChats
                             .Select(x => x.User)
                             .FirstOrDefault(x => x.Id != user.Id);
-
                         chatName = otherUser?.DisplayName ?? "Личный чат";
                     }
-                    else
-                    {
-                        chatName = chat.Name;
-                    }
+                    else chatName = chat.Name;
 
-                    return new
-                    {
-                        id = chat.Id,
-                        name = chatName
-                    };
+                    return new { id = chat.Id, name = chatName };
                 })
-                // Можно добавить лёгкую сортировку
                 .OrderBy(c => c.name)
                 .ToList();
 
@@ -86,6 +74,67 @@ namespace MessengerApp.Controllers
                 .ToListAsync();
 
             return Json(messages);
+        }
+
+        // Получить список всех пользователей (для модалки)
+        [HttpGet]
+        public async Task<IActionResult> Users(string currentUsername)
+        {
+            var users = await _context.Users
+                .Where(u => u.IsActive && u.Username != currentUsername)
+                .Select(u => new
+                {
+                    username = u.Username,
+                    displayName = u.DisplayName
+                })
+                .OrderBy(u => u.displayName)
+                .ToListAsync();
+
+            return Json(users);
+        }
+
+        // Создать личный чат
+        [HttpPost]
+        public async Task<IActionResult> CreatePrivateChat(string username1, string username2)
+        {
+            if (username1 == username2)
+                return BadRequest("Нельзя создать чат с самим собой.");
+
+            var user1 = await _context.Users.FirstOrDefaultAsync(u => u.Username == username1);
+            var user2 = await _context.Users.FirstOrDefaultAsync(u => u.Username == username2);
+
+            if (user1 == null || user2 == null)
+                return NotFound("Пользователь не найден.");
+
+            var existingChat = await _context.Chats
+                .Include(c => c.UserChats)
+                .FirstOrDefaultAsync(c => !c.IsGroup &&
+                    c.UserChats.Any(uc => uc.UserId == user1.Id) &&
+                    c.UserChats.Any(uc => uc.UserId == user2.Id));
+
+            if (existingChat != null)
+                return Json(new { id = existingChat.Id, name = user2.DisplayName });
+
+            var chat = new Models.Chat
+            {
+                Name = $"ЛС: {user1.DisplayName} ↔ {user2.DisplayName}",
+                IsGroup = false,
+                IsPrivate = true,
+                IsActive = true,
+                CreatedAt = DateTime.Now
+            };
+
+            _context.Chats.Add(chat);
+            await _context.SaveChangesAsync();
+
+            _context.UserChats.AddRange(
+                new Models.UserChat { UserId = user1.Id, ChatId = chat.Id },
+                new Models.UserChat { UserId = user2.Id, ChatId = chat.Id }
+            );
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { id = chat.Id, name = user2.DisplayName });
         }
     }
 }

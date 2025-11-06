@@ -88,6 +88,7 @@
             border-right: 1px solid #2b5278;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         .chat-item {
@@ -139,6 +140,42 @@
             color: white;
             padding: 10px 20px;
         }
+
+        /* Плавающая кнопка */
+        .floating-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background-color: #2b5278;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: 0.3s;
+        }
+
+        .floating-btn:hover {
+            background-color: #3c6fa5;
+            transform: scale(1.1);
+        }
+
+        /* Модалка */
+        .modal-content {
+            background: #17212b;
+            color: white;
+        }
+        .user-item {
+            padding: 10px;
+            border-bottom: 1px solid #2b5278;
+            cursor: pointer;
+        }
+        .user-item:hover {
+            background: #2b5278;
+        }
     </style>
 </head>
 <body>
@@ -168,6 +205,9 @@
         <div class="sidebar">
             <h4 class="p-3">Чаты</h4>
             <div id="chatList"></div>
+
+            <!-- ✏️ Плавающая кнопка -->
+            <button class="floating-btn" data-bs-toggle="modal" data-bs-target="#usersModal">✏️</button>
         </div>
 
         <div class="chat-window">
@@ -179,75 +219,116 @@
         </div>
     </div>
 
-<script>
-    const username = "@User.Identity?.Name";
-    const displayName = "@ViewBag.DisplayName";
-    let currentChatId = null;
+    <!-- Модалка для списка пользователей -->
+    <div class="modal fade" id="usersModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Новый диалог</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="usersList">Загрузка...</div>
+            </div>
+        </div>
+    </div>
 
-    const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    connection.on("ReceiveMessage", (sender, message, time) => {
-        const msgDiv = document.createElement("div");
-        msgDiv.style.textAlign = "left";
-        msgDiv.innerHTML = `<b>${sender}</b> [${time}]: ${message}`;
-        const messagesContainer = document.getElementById("messages");
-        messagesContainer.appendChild(msgDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    });
+    <script>
+        const username = "@User.Identity?.Name";
+        const displayName = "@ViewBag.DisplayName";
+        let currentChatId = null;
 
-    connection.start().then(loadChats);
+        const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 
-    async function loadChats() {
-        const res = await fetch(`/Chat/List?username=${username}`);
-        const chats = await res.json();
-        const list = document.getElementById("chatList");
-        list.innerHTML = "";
-        chats.forEach(c => {
-            const div = document.createElement("div");
-            div.className = "chat-item";
-            div.innerText = c.name;
-            div.onclick = () => openChat(c.id, c.name);
-            list.appendChild(div);
+        connection.on("ReceiveMessage", (sender, message, time) => {
+            const msgDiv = document.createElement("div");
+            msgDiv.style.textAlign = "left";
+            msgDiv.innerHTML = `<b>${sender}</b> [${time}]: ${message}`;
+            const messagesContainer = document.getElementById("messages");
+            messagesContainer.appendChild(msgDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         });
-    }
 
-    async function openChat(chatId, chatName) {
-        currentChatId = chatId;
-        document.getElementById("chatTitle").textContent = chatName;
-        const messagesContainer = document.getElementById("messages");
-        messagesContainer.innerHTML = "";
-        messagesContainer.style.alignItems = "flex-start";
-        messagesContainer.style.justifyContent = "flex-start";
-        await connection.invoke("JoinChat", chatId);
+        connection.start().then(loadChats);
 
-        const res = await fetch(`/Chat/Messages?chatId=${chatId}`);
-        const msgs = await res.json();
-        msgs.forEach(m => {
-            const div = document.createElement("div");
-            div.style.textAlign = "left";
-            div.innerHTML = `<b>${m.sender}</b> [${m.time}]: ${m.content}`;
-            messagesContainer.appendChild(div);
-        });
-    }
-
-    async function sendMessage() {
-        const text = document.getElementById("messageInput").value.trim();
-        if (!text || !currentChatId) return;
-        await connection.invoke("SendMessage", currentChatId, username, text);
-        document.getElementById("messageInput").value = "";
-    }
-
-    // Кнопка
-    document.getElementById("sendButton").onclick = sendMessage;
-
-    // Отправка по Enter
-    document.getElementById("messageInput").addEventListener("keydown", function (e) {
-        if (e.key === "Enter" && !e.shiftKey) {
-            e.preventDefault(); // не вставляем перенос строки
-            sendMessage();
+        async function loadChats() {
+            const res = await fetch(`/Chat/List?username=${username}`);
+            const chats = await res.json();
+            const list = document.getElementById("chatList");
+            list.innerHTML = "";
+            chats.forEach(c => {
+                const div = document.createElement("div");
+                div.className = "chat-item";
+                div.innerText = c.name;
+                div.onclick = () => openChat(c.id, c.name);
+                list.appendChild(div);
+            });
         }
-    });
 
-</script>
+        async function openChat(chatId, chatName) {
+            currentChatId = chatId;
+            document.getElementById("chatTitle").textContent = chatName;
+            const messagesContainer = document.getElementById("messages");
+            messagesContainer.innerHTML = "";
+            messagesContainer.style.alignItems = "flex-start";
+            messagesContainer.style.justifyContent = "flex-start";
+            await connection.invoke("JoinChat", chatId);
+
+            const res = await fetch(`/Chat/Messages?chatId=${chatId}`);
+            const msgs = await res.json();
+            msgs.forEach(m => {
+                const div = document.createElement("div");
+                div.style.textAlign = "left";
+                div.innerHTML = `<b>${m.sender}</b> [${m.time}]: ${m.content}`;
+                messagesContainer.appendChild(div);
+            });
+        }
+
+        async function sendMessage() {
+            const text = document.getElementById("messageInput").value.trim();
+            if (!text || !currentChatId) return;
+            await connection.invoke("SendMessage", currentChatId, username, text);
+            document.getElementById("messageInput").value = "";
+        }
+
+        document.getElementById("sendButton").onclick = sendMessage;
+        document.getElementById("messageInput").addEventListener("keydown", function (e) {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        // ===== Загрузка списка пользователей =====
+        const usersModal = document.getElementById("usersModal");
+        usersModal.addEventListener("show.bs.modal", async () => {
+            const res = await fetch(`/Chat/Users?currentUsername=${username}`);
+            const users = await res.json();
+            const list = document.getElementById("usersList");
+            list.innerHTML = "";
+            users.forEach(u => {
+                const div = document.createElement("div");
+                div.className = "user-item";
+                div.innerText = u.displayName;
+                div.onclick = async () => {
+                    const resp = await fetch(`/Chat/CreatePrivateChat`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: `username1=${username}&username2=${u.username}`
+                    });
+                    if (resp.ok) {
+                        const chat = await resp.json();
+                        bootstrap.Modal.getInstance(usersModal).hide();
+                        await loadChats();
+                        openChat(chat.id, chat.name);
+                    } else {
+                        alert("Не удалось создать чат");
+                    }
+                };
+                list.appendChild(div);
+            });
+        });
+    </script>
 </body>
 </html>

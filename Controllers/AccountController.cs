@@ -27,14 +27,14 @@ namespace MessengerApp.Controllers
             {
                 ViewBag.Error = "Пароли не совпадают.";
                 ViewBag.Departments = _context.Department.ToList();
-                return View();
+                return View("Login");
             }
 
             if (_context.Users.Any(u => u.Username == username))
             {
                 ViewBag.Error = "Такой логин уже существует.";
                 ViewBag.Departments = _context.Department.ToList();
-                return View();
+                return View("Login");
             }
 
             var newUser = new User
@@ -95,13 +95,16 @@ namespace MessengerApp.Controllers
             await _context.SaveChangesAsync();
 
             ViewBag.Message = "Регистрация прошла успешно. Теперь войдите в систему.";
-
-            return RedirectToAction("TestAuth");
+            return RedirectToAction("Login");
         }
 
         // --------------------- ЛОГИН ---------------------
         [HttpGet]
-        public IActionResult Login() => View();
+        public IActionResult Login()
+        {
+            ViewBag.Departments = _context.Department.ToList();
+            return View();
+        }
 
         [HttpPost]
         public async Task<IActionResult> Login(string username, string password)
@@ -115,12 +118,14 @@ namespace MessengerApp.Controllers
             if (user == null)
             {
                 ViewBag.Error = "Неверный логин или пароль.";
+                ViewBag.Departments = _context.Department.ToList();
                 return View();
             }
 
             if (!user.IsActive)
             {
                 ViewBag.Error = "Пользователь деактивирован.";
+                ViewBag.Departments = _context.Department.ToList();
                 return View();
             }
 
@@ -144,25 +149,16 @@ namespace MessengerApp.Controllers
             var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
 
-
-
-            //------------------------------------------------------------------------------------###
-            //return RedirectToAction("Index", "Home");
-            return RedirectToAction("TestAuth");
-            //------------------------------------------------------------------------------------###
-
-
+            // После входа направляем на основную страницу
+            return RedirectToAction("Index", "Home");
         }
 
         // --------------------- ВЫХОД ---------------------
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            // После выхода сразу перебрасываем на логин или тестовую страницу
-            return RedirectToAction("TestAuth"); // 👈 во время тестов
-            // return RedirectToAction("Login");  // 👈 в “боевой” версии
+            return RedirectToAction("Login");
         }
-
 
         // --------------------- УТИЛИТА ---------------------
         private string HashPassword(string password)
@@ -171,14 +167,5 @@ namespace MessengerApp.Controllers
             var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
             return BitConverter.ToString(bytes).Replace("-", "").ToLower();
         }
-        // 🔰 DEBUG: тестовая страница авторизации (удалить после проверки)
-        [HttpGet]
-        public IActionResult TestAuth()
-        {
-            ViewBag.Departments = _context.Department.ToList();
-            return View();
-        }
-        // 🔰 END DEBUG
-
     }
 }
