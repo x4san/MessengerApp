@@ -1,6 +1,8 @@
 using MessengerApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using MessengerApp.Hubs;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,7 +26,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // -----------------------------------------------------------------------------
 // 🔹 Подключаем MVC
 builder.Services.AddControllersWithViews();
-
+builder.Services.AddSignalR();
 var app = builder.Build();
 
 // -----------------------------------------------------------------------------
@@ -36,6 +38,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
+
+app.MapHub<ChatHub>("/chatHub");
+
 
 // 🔑 Важно: порядок имеет значение
 app.UseAuthentication();   // обязательно ДО Authorization

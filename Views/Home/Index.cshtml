@@ -1,172 +1,253 @@
-﻿@model IEnumerable<MessengerApp.Models.Chat>
-
 @{
     ViewData["Title"] = "Messenger";
     Layout = null;
 }
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="utf-8" />
     <title>@ViewData["Title"]</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
     <style>
         body {
             margin: 0;
             height: 100vh;
-            background-color: #0e1621;
+            background: #0e1621;
             color: white;
             display: flex;
+            flex-direction: column;
             font-family: 'Segoe UI', sans-serif;
         }
+
+        /* Верхняя панель */
+        .top-bar {
+            height: 55px;
+            background-color: #17212b;
+            border-bottom: 1px solid #2b5278;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            background-color: #2b5278;
+            color: white;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .username {
+            font-weight: 500;
+            color: white;
+        }
+
+        .logout-btn {
+            background-color: #2b5278;
+            border: none;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .logout-btn:hover {
+            background-color: #3c6fa5;
+        }
+
+        .chat-title {
+            color: #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Основное тело */
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
         .sidebar {
             width: 30%;
-            background-color: #17212b;
+            background: #17212b;
             border-right: 1px solid #2b5278;
             display: flex;
             flex-direction: column;
-            position: relative;
         }
-        .search {
-            padding: 10px;
-            border-bottom: 1px solid #2b5278;
-        }
-        .search input {
-            width: 100%;
-            border: none;
-            padding: 8px;
-            border-radius: 5px;
-            background-color: #0e1621;
-            color: white;
-        }
-        .chat-list {
-            flex: 1;
-            overflow-y: auto;
-        }
+
         .chat-item {
             padding: 10px;
             border-bottom: 1px solid #2b5278;
             cursor: pointer;
         }
+
         .chat-item:hover {
-            background-color: #2b5278;
+            background: #2b5278;
         }
-        .new-chat {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            width: 50px;
-            height: 50px;
-            background-color: #2b5278;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-        }
+
         .chat-window {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background-color: #0e1621;
             position: relative;
+            background-color: #0e1621;
         }
+
         #messages {
             flex: 1;
             overflow-y: auto;
             padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #c0c0c0;
+            text-align: center;
         }
+
         .message-input {
             display: flex;
             border-top: 1px solid #2b5278;
         }
+
         .message-input input {
             flex: 1;
-            background-color: #17212b;
+            background: #17212b;
             border: none;
             color: white;
             padding: 10px;
         }
+
         .message-input button {
-            background-color: #2b5278;
-            color: white;
+            background: #2b5278;
             border: none;
+            color: white;
             padding: 10px 20px;
         }
     </style>
 </head>
 <body>
-    <div class="sidebar">
-        <div class="search">
-            <input id="searchBox" type="text" placeholder="Поиск пользователей..." />
-        </div>
-
-        <!-- 📜 Список чатов из базы -->
-        <div id="chatList" class="chat-list">
-            @if (!Model.Any())
-            {
-                <div class="p-3 text-secondary">Нет активных чатов</div>
-            }
-            else
-            {
-                @foreach (var chat in Model)
+    <!-- Верхняя панель -->
+    <div class="top-bar">
+        <div class="user-info">
+            <div class="user-avatar">
+                @if (!string.IsNullOrEmpty(ViewBag.DisplayName))
                 {
-                    <div class="chat-item" onclick="openChat(@chat.Id)">
-                        <b>@chat.Name</b><br />
-                        <small>Чат ID: @chat.Id</small>
-                    </div>
+                    @ViewBag.DisplayName.Substring(0, 1).ToUpper()
                 }
-            }
+                else
+                {
+                    <text>?</text>
+                }
+            </div>
+            <span class="username">@ViewBag.DisplayName</span>
+            <form method="post" asp-controller="Account" asp-action="Logout" style="margin:0;">
+                <button class="logout-btn">Выйти</button>
+            </form>
         </div>
-
-        <div class="new-chat" title="Создать чат" onclick="openNewChat()">✏️</div>
+        <div class="chat-title" id="chatTitle">Messenger</div>
     </div>
 
-    <!-- 🪟 Окно чата -->
-    <div class="chat-window" id="chatWindow">
-        <div id="messages" class="p-3 text-secondary">Выберите чат для общения</div>
+    <!-- Основная область -->
+    <div class="main-container">
+        <div class="sidebar">
+            <h4 class="p-3">Чаты</h4>
+            <div id="chatList"></div>
+        </div>
 
-        <div class="message-input">
-            <input type="text" id="messageInput" placeholder="Введите сообщение..." />
-            <button id="sendButton">Отправить</button>
+        <div class="chat-window">
+            <div id="messages">Выберите чат</div>
+            <div class="message-input">
+                <input type="text" id="messageInput" placeholder="Введите сообщение..." />
+                <button id="sendButton">Отправить</button>
+            </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
-    <script>
-        const currentUser = "@ViewBag.DisplayName";
-        if (!currentUser || currentUser.trim() === "") {
-            window.location.href = "/Account/TestAuth";
-        }
+<script>
+    const username = "@User.Identity?.Name";
+    const displayName = "@ViewBag.DisplayName";
+    let currentChatId = null;
 
-        const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
+    const connection = new signalR.HubConnectionBuilder().withUrl("/chatHub").build();
 
-        connection.on("ReceiveMessage", (user, message, time) => {
-            const msgDiv = document.createElement("div");
-            msgDiv.innerHTML = `<b>${user}</b>: ${message}`;
-            document.getElementById("messages").appendChild(msgDiv);
+    connection.on("ReceiveMessage", (sender, message, time) => {
+        const msgDiv = document.createElement("div");
+        msgDiv.style.textAlign = "left";
+        msgDiv.innerHTML = `<b>${sender}</b> [${time}]: ${message}`;
+        const messagesContainer = document.getElementById("messages");
+        messagesContainer.appendChild(msgDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    });
+
+    connection.start().then(loadChats);
+
+    async function loadChats() {
+        const res = await fetch(`/Chat/List?username=${username}`);
+        const chats = await res.json();
+        const list = document.getElementById("chatList");
+        list.innerHTML = "";
+        chats.forEach(c => {
+            const div = document.createElement("div");
+            div.className = "chat-item";
+            div.innerText = c.name;
+            div.onclick = () => openChat(c.id, c.name);
+            list.appendChild(div);
         });
+    }
 
-        connection.start().catch(err => console.error(err.toString()));
+    async function openChat(chatId, chatName) {
+        currentChatId = chatId;
+        document.getElementById("chatTitle").textContent = chatName;
+        const messagesContainer = document.getElementById("messages");
+        messagesContainer.innerHTML = "";
+        messagesContainer.style.alignItems = "flex-start";
+        messagesContainer.style.justifyContent = "flex-start";
+        await connection.invoke("JoinChat", chatId);
 
-        document.getElementById("sendButton").addEventListener("click", function () {
-            const msg = document.getElementById("messageInput").value;
-            if (msg.trim() === "") return;
-            connection.invoke("SendMessage", 1, currentUser, msg); // chatId пока тестовый
-            document.getElementById("messageInput").value = "";
+        const res = await fetch(`/Chat/Messages?chatId=${chatId}`);
+        const msgs = await res.json();
+        msgs.forEach(m => {
+            const div = document.createElement("div");
+            div.style.textAlign = "left";
+            div.innerHTML = `<b>${m.sender}</b> [${m.time}]: ${m.content}`;
+            messagesContainer.appendChild(div);
         });
+    }
 
-        async function openChat(chatId) {
-            const res = await fetch(`/Chat/Room?id=${chatId}`);
-            const html = await res.text();
-            document.getElementById("chatWindow").innerHTML = html;
-        }
+    async function sendMessage() {
+        const text = document.getElementById("messageInput").value.trim();
+        if (!text || !currentChatId) return;
+        await connection.invoke("SendMessage", currentChatId, username, text);
+        document.getElementById("messageInput").value = "";
+    }
 
-        function openNewChat() {
-            alert("Создание нового чата (в разработке)");
+    // Кнопка
+    document.getElementById("sendButton").onclick = sendMessage;
+
+    // Отправка по Enter
+    document.getElementById("messageInput").addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault(); // не вставляем перенос строки
+            sendMessage();
         }
-    </script>
+    });
+
+</script>
 </body>
 </html>

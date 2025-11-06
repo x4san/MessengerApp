@@ -1,7 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using MessengerApp.Models;
-using System.Security.Cryptography;
-using System.Text;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace MessengerApp.Data
@@ -80,10 +78,8 @@ namespace MessengerApp.Data
                 .WithMany()
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // --- Хэш для пароля "123" ---
-            const string hash123 = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3";
-
-            // --- Фиксированная дата ---
+            // --- Статические значения ---
+            const string hash123 = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"; // SHA256("123")
             var fixedDate = new DateTime(2025, 1, 1, 0, 0, 0);
 
             // --- Пользователи ---
@@ -105,7 +101,7 @@ namespace MessengerApp.Data
                     Username = "mod",
                     PasswordHash = hash123,
                     DisplayName = "Модератор",
-                    DepartmentId = 1,
+                    DepartmentId = 2,
                     IsActive = true,
                     ModerationStatus = "Approved",
                     CreatedAt = fixedDate
@@ -116,7 +112,7 @@ namespace MessengerApp.Data
                     Username = "user",
                     PasswordHash = hash123,
                     DisplayName = "Пользователь",
-                    DepartmentId = 1,
+                    DepartmentId = 3,
                     IsActive = true,
                     ModerationStatus = "Approved",
                     CreatedAt = fixedDate
@@ -132,62 +128,49 @@ namespace MessengerApp.Data
 
             // --- Чаты ---
             modelBuilder.Entity<Chat>().HasData(
+                // 1. Общий чат всех сотрудников
                 new Chat
                 {
                     Id = 1,
-                    Name = "Общий чат",
+                    Name = "Общий чат всех сотрудников",
                     IsGroup = true,
                     IsPrivate = false,
                     IsActive = true,
                     CreatedAt = fixedDate
                 },
-                new Chat
-                {
-                    Id = 2,
-                    Name = "ЛС: Администратор ↔ Модератор",
-                    IsGroup = false,
-                    IsPrivate = false,
-                    IsActive = true,
-                    CreatedAt = fixedDate
-                },
-                new Chat
-                {
-                    Id = 3,
-                    Name = "ЛС: Администратор ↔ Пользователь",
-                    IsGroup = false,
-                    IsPrivate = false,
-                    IsActive = true,
-                    CreatedAt = fixedDate
-                },
-                new Chat
-                {
-                    Id = 4,
-                    Name = "ЛС: Модератор ↔ Пользователь",
-                    IsGroup = false,
-                    IsPrivate = false,
-                    IsActive = true,
-                    CreatedAt = fixedDate
-                }
+
+                // 2–6. Чаты отделов
+                new Chat { Id = 2, Name = "Отдел: Терапия", IsGroup = true, IsPrivate = false, IsActive = true, CreatedAt = fixedDate },
+                new Chat { Id = 3, Name = "Отдел: Хирургия", IsGroup = true, IsPrivate = false, IsActive = true, CreatedAt = fixedDate },
+                new Chat { Id = 4, Name = "Отдел: Лаборатория", IsGroup = true, IsPrivate = false, IsActive = true, CreatedAt = fixedDate },
+                new Chat { Id = 5, Name = "Отдел: Рентгенология", IsGroup = true, IsPrivate = false, IsActive = true, CreatedAt = fixedDate },
+                new Chat { Id = 6, Name = "Отдел: Регистратура", IsGroup = true, IsPrivate = false, IsActive = true, CreatedAt = fixedDate },
+
+                // 7–9. Личные чаты
+                new Chat { Id = 7, Name = "ЛС: Админ ↔ Модератор", IsGroup = false, IsPrivate = true, IsActive = true, CreatedAt = fixedDate },
+                new Chat { Id = 8, Name = "ЛС: Админ ↔ Пользователь", IsGroup = false, IsPrivate = true, IsActive = true, CreatedAt = fixedDate },
+                new Chat { Id = 9, Name = "ЛС: Модератор ↔ Пользователь", IsGroup = false, IsPrivate = true, IsActive = true, CreatedAt = fixedDate }
             );
 
-            // --- Связи пользователей с чатами ---
+            // --- Привязки пользователей к чатам ---
             modelBuilder.Entity<UserChat>().HasData(
-                // Общий чат (все трое)
+                // Общий
                 new UserChat { UserId = 1, ChatId = 1, IsAdmin = true },
                 new UserChat { UserId = 2, ChatId = 1 },
                 new UserChat { UserId = 3, ChatId = 1 },
 
-                // ЛС: админ ↔ модератор
-                new UserChat { UserId = 1, ChatId = 2 },
-                new UserChat { UserId = 2, ChatId = 2 },
+                // Отделы
+                new UserChat { UserId = 1, ChatId = 2 }, // админ — терапия
+                new UserChat { UserId = 2, ChatId = 3 }, // мод — хирургия
+                new UserChat { UserId = 3, ChatId = 4 }, // юзер — лаборатория
 
-                // ЛС: админ ↔ пользователь
-                new UserChat { UserId = 1, ChatId = 3 },
-                new UserChat { UserId = 3, ChatId = 3 },
-
-                // ЛС: мод ↔ пользователь
-                new UserChat { UserId = 2, ChatId = 4 },
-                new UserChat { UserId = 3, ChatId = 4 }
+                // ЛС
+                new UserChat { UserId = 1, ChatId = 7 },
+                new UserChat { UserId = 2, ChatId = 7 },
+                new UserChat { UserId = 1, ChatId = 8 },
+                new UserChat { UserId = 3, ChatId = 8 },
+                new UserChat { UserId = 2, ChatId = 9 },
+                new UserChat { UserId = 3, ChatId = 9 }
             );
         }
 

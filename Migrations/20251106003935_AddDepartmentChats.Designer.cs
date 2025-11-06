@@ -3,6 +3,7 @@ using System;
 using MessengerApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace MessengerApp.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251106003935_AddDepartmentChats")]
+    partial class AddDepartmentChats
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.10");
@@ -101,33 +104,6 @@ namespace MessengerApp.Migrations
                             IsGroup = true,
                             IsPrivate = false,
                             Name = "Отдел: Регистратура"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = true,
-                            IsGroup = false,
-                            IsPrivate = true,
-                            Name = "ЛС: Админ ↔ Модератор"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = true,
-                            IsGroup = false,
-                            IsPrivate = true,
-                            Name = "ЛС: Админ ↔ Пользователь"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            CreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            IsActive = true,
-                            IsGroup = false,
-                            IsPrivate = true,
-                            Name = "ЛС: Модератор ↔ Пользователь"
                         });
                 });
 
@@ -356,84 +332,42 @@ namespace MessengerApp.Migrations
                             UserId = 1,
                             ChatId = 1,
                             IsAdmin = true,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4516)
+                            JoinedAt = new DateTime(2025, 11, 6, 0, 39, 35, 103, DateTimeKind.Utc).AddTicks(2744)
                         },
                         new
                         {
                             UserId = 2,
                             ChatId = 1,
                             IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4784)
+                            JoinedAt = new DateTime(2025, 11, 6, 0, 39, 35, 103, DateTimeKind.Utc).AddTicks(3003)
                         },
                         new
                         {
                             UserId = 3,
                             ChatId = 1,
                             IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4786)
+                            JoinedAt = new DateTime(2025, 11, 6, 0, 39, 35, 103, DateTimeKind.Utc).AddTicks(3005)
                         },
                         new
                         {
                             UserId = 1,
                             ChatId = 2,
                             IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4786)
+                            JoinedAt = new DateTime(2025, 11, 6, 0, 39, 35, 103, DateTimeKind.Utc).AddTicks(3006)
                         },
                         new
                         {
                             UserId = 2,
                             ChatId = 3,
                             IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4787)
+                            JoinedAt = new DateTime(2025, 11, 6, 0, 39, 35, 103, DateTimeKind.Utc).AddTicks(3006)
                         },
                         new
                         {
                             UserId = 3,
                             ChatId = 4,
                             IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4788)
-                        },
-                        new
-                        {
-                            UserId = 1,
-                            ChatId = 7,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4789)
-                        },
-                        new
-                        {
-                            UserId = 2,
-                            ChatId = 7,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4790)
-                        },
-                        new
-                        {
-                            UserId = 1,
-                            ChatId = 8,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4790)
-                        },
-                        new
-                        {
-                            UserId = 3,
-                            ChatId = 8,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4791)
-                        },
-                        new
-                        {
-                            UserId = 2,
-                            ChatId = 9,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4792)
-                        },
-                        new
-                        {
-                            UserId = 3,
-                            ChatId = 9,
-                            IsAdmin = false,
-                            JoinedAt = new DateTime(2025, 11, 6, 1, 6, 56, 789, DateTimeKind.Utc).AddTicks(4793)
+                            JoinedAt = new DateTime(2025, 11, 6, 0, 39, 35, 103, DateTimeKind.Utc).AddTicks(3007)
                         });
                 });
 

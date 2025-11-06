@@ -20,13 +20,6 @@ namespace MessengerApp.Controllers
         }
 
         // --------------------- РЕГИСТРАЦИЯ ---------------------
-        [HttpGet]
-        public IActionResult Register()
-        {
-            ViewBag.Departments = _context.Department.ToList();
-            return View();
-        }
-
         [HttpPost]
         public async Task<IActionResult> Register(string username, string password, string confirmPassword, string displayName, int departmentId)
         {
@@ -50,8 +43,7 @@ namespace MessengerApp.Controllers
                 PasswordHash = HashPassword(password),
                 DisplayName = displayName,
                 DepartmentId = departmentId,
-                CreatedAt = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day,
-                         DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second),
+                CreatedAt = DateTime.Now,
                 IsActive = true,
                 ModerationStatus = "Approved"
             };
@@ -68,17 +60,43 @@ namespace MessengerApp.Controllers
                     UserId = newUser.Id,
                     RoleId = userRole.Id
                 });
-                await _context.SaveChangesAsync();
             }
+
+            // --- Автоматическое подключение к чатам ---
+            var globalChat = await _context.Chats.FirstOrDefaultAsync(c => c.Id == 1);
+            var department = await _context.Department.FindAsync(departmentId);
+
+            if (globalChat != null)
+            {
+                _context.UserChats.Add(new UserChat
+                {
+                    UserId = newUser.Id,
+                    ChatId = globalChat.Id,
+                    IsAdmin = false
+                });
+            }
+
+            if (department != null)
+            {
+                var deptChatName = $"Отдел: {department.Name}";
+                var deptChat = await _context.Chats.FirstOrDefaultAsync(c => c.Name == deptChatName);
+
+                if (deptChat != null)
+                {
+                    _context.UserChats.Add(new UserChat
+                    {
+                        UserId = newUser.Id,
+                        ChatId = deptChat.Id,
+                        IsAdmin = false
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
 
             ViewBag.Message = "Регистрация прошла успешно. Теперь войдите в систему.";
 
-
-            //------------------------------------------------------------------------------------###
-            //return RedirectToAction("Login");
             return RedirectToAction("TestAuth");
-            //------------------------------------------------------------------------------------###
-
         }
 
         // --------------------- ЛОГИН ---------------------
