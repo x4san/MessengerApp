@@ -6,3 +6,4 @@ appsettings.Development.json
 .vscode/
 *.user
 Properties/launchSettings.json
+*.sln
