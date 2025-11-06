@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MessengerApp.Data;
 using MessengerApp.Models;
+using MessengerApp.Services;
 
 namespace MessengerApp.Controllers
 {
@@ -10,10 +11,12 @@ namespace MessengerApp.Controllers
     public class HomeController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly ChatPresentationService _presentationService;
 
-        public HomeController(AppDbContext context)
+        public HomeController(AppDbContext context, ChatPresentationService presentationService)
         {
             _context = context;
+            _presentationService = presentationService;
         }
 
         // Главная страница чатов
@@ -38,33 +41,25 @@ namespace MessengerApp.Controllers
 
             ViewBag.DisplayName = user.DisplayName ?? user.Username;
             ViewBag.Username = user.Username;
+            ViewBag.Bio = user.Bio;
 
-            // Формируем список чатов с корректными названиями
-            var chatList = user.UserChats
-                .Where(uc => uc.Chat.IsActive)
-                .Select(uc =>
-                {
-                    var chat = uc.Chat;
+            var summaries = await _presentationService.GetChatSummariesAsync(user.Id);
+            ViewBag.InitialChats = summaries.Select(c => new
+            {
+                id = c.Id,
+                name = c.Name,
+                lastMessage = c.LastMessage,
+                lastSender = c.LastSender,
+                lastMessageTime = c.LastMessageUtc?.ToLocalTime().ToString("HH:mm"),
+                lastMessageUtc = c.LastMessageUtc,
+                lastMessageId = c.LastMessageId,
+                unreadCount = c.UnreadCount,
+                isGroup = c.IsGroup,
+                avatarInitials = c.AvatarInitials,
+                avatarColor = c.AvatarColor
+            }).ToList();
 
-                    if (!chat.IsGroup)
-                    {
-                        // Ищем собеседника (второго участника)
-                        var otherUser = chat.UserChats
-                            .Select(x => x.User)
-                            .FirstOrDefault(x => x.Id != user.Id);
-
-                        // Подменяем имя чата на DisplayName собеседника
-                        chat.Name = otherUser != null ? otherUser.DisplayName : "Личный чат";
-                    }
-
-                    return chat;
-                })
-                // Сортировка: общий чат → групповые → личные
-                .OrderBy(c => c.IsGroup ? (c.Name.Contains("Общий") ? 0 : 1) : 2)
-                .ThenBy(c => c.Name)
-                .ToList();
-
-            return View(chatList);
+            return View();
         }
     }
 }
