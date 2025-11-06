@@ -1,13 +1,11 @@
 @using System.Text.Json
-@using System.Collections.Generic
 @using MessengerApp.Utils
-@{ 
+@{
     var displayName = ViewBag.DisplayName as string ?? string.Empty;
     var username = ViewBag.Username as string ?? string.Empty;
     var bio = ViewBag.Bio as string ?? string.Empty;
     var initials = ChatFormattingHelper.BuildInitials(displayName);
     var avatarColor = ChatFormattingHelper.PickColor(username);
-    var initialChats = ViewBag.InitialChats ?? new List<object>();
     Layout = null;
 }
 <!DOCTYPE html>
@@ -545,6 +543,7 @@
             border-radius: 10px;
             padding: 10px 18px;
             cursor: pointer;
+            font-size: 13px;
         }
 
         @media (max-width: 1100px) {
@@ -660,7 +659,6 @@
             initials,
             avatarColor
         }));
-        const initialChatData = @Html.Raw(JsonSerializer.Serialize(initialChats));
 
         const chatListEl = document.getElementById("chatList");
         const chatSearchEl = document.getElementById("chatSearch");
@@ -725,29 +723,17 @@
             .withAutomaticReconnect()
             .build();
 
-        let signalRConnected = false;
-
-        const startPromise = connection.start()
-            .then(() => {
-                signalRConnected = true;
-                connection.invoke("SubscribeChatList");
-                ensureChatOpened();
-            })
-            .catch(error => {
-                console.error("Ошибка подключения SignalR", error);
-                loadChatListFallback();
-            });
-
         connection.on("ChatsSnapshot", (chats) => {
-            applyChatSummaries(chats);
+            chatSummaries = chats.map(normalizeChatSummary);
+            renderChatList();
+            enableComposer(chatSummaries.length > 0);
         });
 
         connection.on("ChatUpdated", (chat) => {
-            const normalized = normalizeChatSummary(chat);
-            upsertChatSummary(normalized);
+            upsertChatSummary(normalizeChatSummary(chat));
             renderChatList();
-            if (activeChatId === normalized.id) {
-                updateChatHeader(normalized);
+            if (activeChatId === chat.id) {
+                updateChatHeader(chat);
             }
         });
 
@@ -758,7 +744,7 @@
                 appendMessage(normalized);
                 scrollMessagesToBottom();
                 if (normalized.senderUsername !== currentUser.username) {
-                    invokeIfConnected("MarkChatRead", activeChatId);
+                    connection.invoke("MarkChatRead", activeChatId);
                 }
             }
         });
@@ -771,65 +757,11 @@
             }
         });
 
-        applyChatSummaries(initialChatData);
-        if (!Array.isArray(initialChatData) || initialChatData.length === 0) {
-            loadChatListFallback();
-        }
-
-        function applyChatSummaries(chats) {
-            if (!Array.isArray(chats)) {
-                return;
-            }
-
-            chatSummaries = chats.map(normalizeChatSummary);
-            renderChatList();
-            enableComposer(chatSummaries.length > 0);
-            highlightActiveChat();
-            ensureChatOpened();
-        }
-
-        function ensureChatOpened() {
-            if (!activeChatId && chatSummaries.length > 0) {
-                openChat(chatSummaries[0].id);
-            }
-        }
-
-        async function loadChatListFallback() {
-            if (!currentUser?.username) {
-                return;
-            }
-
-            try {
-                const response = await fetch(`/Chat/List?username=${encodeURIComponent(currentUser.username)}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                const chats = await response.json();
-                applyChatSummaries(chats);
-            } catch (error) {
-                console.error('Не удалось загрузить список чатов', error);
-            }
-        }
-
-        async function invokeIfConnected(methodName, ...args) {
-            if (!signalRConnected) {
-                return;
-            }
-
-            try {
-                await connection.invoke(methodName, ...args);
-            } catch (error) {
-                console.error(`Ошибка вызова SignalR метода ${methodName}`, error);
-            }
-        }
+        connection.start().then(() => {
+            connection.invoke("SubscribeChatList");
+        });
 
         async function openChat(chatId) {
-            try {
-                await startPromise;
-            } catch (error) {
-                console.error('Подключение SignalR недоступно', error);
-            }
-
             if (activeChatId === chatId) {
                 return;
             }
@@ -846,7 +778,7 @@
             messageInput.disabled = false;
             sendButton.disabled = false;
 
-            await invokeIfConnected("JoinChat", chatId);
+            await connection.invoke("JoinChat", chatId);
 
             if (!messageCache.has(chatId)) {
                 const response = await fetch(`/Chat/Messages?chatId=${chatId}&username=${encodeURIComponent(currentUser.username)}`);
@@ -860,7 +792,7 @@
 
             renderMessageList(chatId);
             scrollMessagesToBottom();
-            await invokeIfConnected("MarkChatRead", chatId);
+            await connection.invoke("MarkChatRead", chatId);
         }
 
         function renderChatList() {
@@ -1152,17 +1084,11 @@
             const text = messageInput.value.trim();
             if (!text) return;
 
-            try {
-                await startPromise;
-            } catch (error) {
-                console.error('Подключение SignalR недоступно', error);
-            }
-
             if (editContext) {
-                await invokeIfConnected("EditMessage", editContext.id, text);
+                await connection.invoke("EditMessage", editContext.id, text);
                 hideEditBanner();
             } else {
-                await invokeIfConnected("SendMessage", activeChatId, text, replyContext ? replyContext.id : null);
+                await connection.invoke("SendMessage", activeChatId, text, replyContext ? replyContext.id : null);
                 hideReplyBanner();
             }
 
