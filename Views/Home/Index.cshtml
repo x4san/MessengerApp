@@ -18,6 +18,12 @@
             display: flex;
             flex-direction: column;
             font-family: 'Segoe UI', sans-serif;
+            overflow: hidden; /* 💡 предотвращает смещение */
+        }
+
+        /* 💡 фикс Bootstrap-модалки — убираем auto padding при открытии */
+        body.modal-open {
+            padding-right: 0 !important;
         }
 
         /* Верхняя панель */
@@ -29,6 +35,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 20px;
+            flex-shrink: 0;
         }
 
         .user-info {
@@ -80,6 +87,7 @@
             flex: 1;
             display: flex;
             overflow: hidden;
+            min-height: 0;
         }
 
         .sidebar {
@@ -89,6 +97,7 @@
             display: flex;
             flex-direction: column;
             position: relative;
+            flex-shrink: 0;
         }
 
         .chat-item {
@@ -105,7 +114,6 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            position: relative;
             background-color: #0e1621;
         }
 
@@ -115,15 +123,16 @@
             padding: 15px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
+            align-items: flex-start;
+            justify-content: flex-start;
+            text-align: left;
             color: #c0c0c0;
-            text-align: center;
         }
 
         .message-input {
             display: flex;
             border-top: 1px solid #2b5278;
+            flex-shrink: 0;
         }
 
         .message-input input {
@@ -243,7 +252,6 @@
 
         connection.on("ReceiveMessage", (sender, message, time) => {
             const msgDiv = document.createElement("div");
-            msgDiv.style.textAlign = "left";
             msgDiv.innerHTML = `<b>${sender}</b> [${time}]: ${message}`;
             const messagesContainer = document.getElementById("messages");
             messagesContainer.appendChild(msgDiv);
@@ -271,15 +279,12 @@
             document.getElementById("chatTitle").textContent = chatName;
             const messagesContainer = document.getElementById("messages");
             messagesContainer.innerHTML = "";
-            messagesContainer.style.alignItems = "flex-start";
-            messagesContainer.style.justifyContent = "flex-start";
             await connection.invoke("JoinChat", chatId);
 
             const res = await fetch(`/Chat/Messages?chatId=${chatId}`);
             const msgs = await res.json();
             msgs.forEach(m => {
                 const div = document.createElement("div");
-                div.style.textAlign = "left";
                 div.innerHTML = `<b>${m.sender}</b> [${m.time}]: ${m.content}`;
                 messagesContainer.appendChild(div);
             });
