@@ -1,16 +1,24 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MessengerApp.Data;
+using MessengerApp.Hubs;
+using MessengerApp.Services;
+using Microsoft.AspNetCore.SignalR;
+using System.Linq;
 
 namespace MessengerApp.Controllers
 {
     public class ChatController : Controller
     {
         private readonly AppDbContext _context;
+        private readonly IHubContext<ChatHub> _chatHubContext;
+        private readonly ChatQueryService _chatQueryService;
 
-        public ChatController(AppDbContext context)
+        public ChatController(AppDbContext context, IHubContext<ChatHub> chatHubContext, ChatQueryService chatQueryService)
         {
             _context = context;
+            _chatHubContext = chatHubContext;
+            _chatQueryService = chatQueryService;
         }
 
         // Получить список чатов пользователя
@@ -20,59 +28,33 @@ namespace MessengerApp.Controllers
             if (string.IsNullOrEmpty(username))
                 return BadRequest("Не указан username.");
 
-            var user = await _context.Users
-                .Include(u => u.UserChats)
-                    .ThenInclude(uc => uc.Chat)
-                        .ThenInclude(c => c.UserChats)
-                            .ThenInclude(uc => uc.User)
-                .FirstOrDefaultAsync(u => u.Username == username);
+            var user = await _chatQueryService.GetUserByUsernameAsync(username);
 
             if (user == null)
                 return NotFound("Пользователь не найден.");
 
-            var chats = user.UserChats
-                .Where(uc => uc.Chat.IsActive)
-                .Select(uc =>
-                {
-                    var chat = uc.Chat;
-                    string chatName;
-
-                    if (!chat.IsGroup)
-                    {
-                        var otherUser = chat.UserChats
-                            .Select(x => x.User)
-                            .FirstOrDefault(x => x.Id != user.Id);
-                        chatName = otherUser?.DisplayName ?? "Личный чат";
-                    }
-                    else chatName = chat.Name;
-
-                    return new { id = chat.Id, name = chatName };
-                })
-                .OrderBy(c => c.name)
-                .ToList();
-
+            var chats = await _chatQueryService.GetChatSummariesAsync(user.Id);
             return Json(chats);
         }
 
         // Получить сообщения определённого чата
         [HttpGet]
-        public async Task<IActionResult> Messages(int chatId)
+        public async Task<IActionResult> Messages(int chatId, string username)
         {
             if (chatId <= 0)
                 return BadRequest("Некорректный chatId.");
 
-            var messages = await _context.Messages
-                .Include(m => m.Sender)
-                .Where(m => m.ChatId == chatId)
-                .OrderBy(m => m.SentAt)
-                .Select(m => new
-                {
-                    sender = m.Sender.DisplayName ?? m.Sender.Username,
-                    content = m.Content,
-                    time = m.SentAt.ToString("HH:mm")
-                })
-                .ToListAsync();
+            var user = await _chatQueryService.GetUserByUsernameAsync(username);
+            if (user == null)
+                return NotFound("Пользователь не найден.");
 
+            var hasAccess = await _context.UserChats
+                .AnyAsync(uc => uc.ChatId == chatId && uc.UserId == user.Id);
+
+            if (!hasAccess)
+                return Forbid();
+
+            var messages = await _chatQueryService.GetMessagesForChatAsync(chatId);
             return Json(messages);
         }
 
@@ -134,7 +116,27 @@ namespace MessengerApp.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Json(new { id = chat.Id, name = user2.DisplayName });
+            var summaryForUser1 = await _chatQueryService.GetChatSummaryForUserAsync(chat.Id, user1.Id);
+            var summaryForUser2 = await _chatQueryService.GetChatSummaryForUserAsync(chat.Id, user2.Id);
+
+            if (summaryForUser1 != null)
+            {
+                await _chatHubContext.Clients.Group($"user_{user1.Username}")
+                    .SendAsync("ChatUpdated", summaryForUser1);
+            }
+
+            if (summaryForUser2 != null)
+            {
+                await _chatHubContext.Clients.Group($"user_{user2.Username}")
+                    .SendAsync("ChatUpdated", summaryForUser2);
+            }
+
+            return Json(new
+            {
+                chatId = chat.Id,
+                userOne = summaryForUser1,
+                userTwo = summaryForUser2
+            });
         }
     }
 }

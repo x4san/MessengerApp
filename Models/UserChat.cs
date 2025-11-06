@@ -17,5 +17,9 @@ namespace MessengerApp.Models
 
         // 👑 Админ / модератор
         public bool IsAdmin { get; set; } = false;
+
+        // 📬 Прочитанные сообщения
+        public int? LastReadMessageId { get; set; }
+        public DateTime? LastReadAt { get; set; }
     }
 }
