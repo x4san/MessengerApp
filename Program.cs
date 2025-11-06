@@ -2,6 +2,7 @@ using MessengerApp.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using MessengerApp.Hubs;
+using MessengerApp.Services;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // 🔹 Подключаем MVC
 builder.Services.AddControllersWithViews();
 builder.Services.AddSignalR();
+builder.Services.AddScoped<ChatPresentationService>();
 var app = builder.Build();
 
 // -----------------------------------------------------------------------------

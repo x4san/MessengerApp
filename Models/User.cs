@@ -6,6 +6,7 @@ namespace MessengerApp.Models
         public string Username { get; set; } = string.Empty; // Уникальное имя пользователя
         public string PasswordHash { get; set; } = string.Empty; // Хэш пароля
         public string DisplayName { get; set; } = string.Empty; // Имя, отображаемое в чате
+        public string? Bio { get; set; } // Короткий статус/о себе
         //department
         public int DepartmentId { get; set; }
         public Department Department { get; set; } = null!;

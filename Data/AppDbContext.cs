@@ -90,6 +90,7 @@ namespace MessengerApp.Data
                     Username = "admin",
                     PasswordHash = hash123,
                     DisplayName = "Администратор",
+                    Bio = "Руководитель чатов",
                     DepartmentId = 1,
                     IsActive = true,
                     ModerationStatus = "Approved",
@@ -101,6 +102,7 @@ namespace MessengerApp.Data
                     Username = "mod",
                     PasswordHash = hash123,
                     DisplayName = "Модератор",
+                    Bio = "Следит за порядком",
                     DepartmentId = 2,
                     IsActive = true,
                     ModerationStatus = "Approved",
@@ -112,6 +114,7 @@ namespace MessengerApp.Data
                     Username = "user",
                     PasswordHash = hash123,
                     DisplayName = "Пользователь",
+                    Bio = "Всегда на связи",
                     DepartmentId = 3,
                     IsActive = true,
                     ModerationStatus = "Approved",
@@ -155,22 +158,22 @@ namespace MessengerApp.Data
             // --- Привязки пользователей к чатам ---
             modelBuilder.Entity<UserChat>().HasData(
                 // Общий
-                new UserChat { UserId = 1, ChatId = 1, IsAdmin = true },
-                new UserChat { UserId = 2, ChatId = 1 },
-                new UserChat { UserId = 3, ChatId = 1 },
+                new UserChat { UserId = 1, ChatId = 1, IsAdmin = true, LastReadAt = fixedDate },
+                new UserChat { UserId = 2, ChatId = 1, LastReadAt = fixedDate },
+                new UserChat { UserId = 3, ChatId = 1, LastReadAt = fixedDate },
 
                 // Отделы
-                new UserChat { UserId = 1, ChatId = 2 }, // админ — терапия
-                new UserChat { UserId = 2, ChatId = 3 }, // мод — хирургия
-                new UserChat { UserId = 3, ChatId = 4 }, // юзер — лаборатория
+                new UserChat { UserId = 1, ChatId = 2, LastReadAt = fixedDate }, // админ — терапия
+                new UserChat { UserId = 2, ChatId = 3, LastReadAt = fixedDate }, // мод — хирургия
+                new UserChat { UserId = 3, ChatId = 4, LastReadAt = fixedDate }, // юзер — лаборатория
 
                 // ЛС
-                new UserChat { UserId = 1, ChatId = 7 },
-                new UserChat { UserId = 2, ChatId = 7 },
-                new UserChat { UserId = 1, ChatId = 8 },
-                new UserChat { UserId = 3, ChatId = 8 },
-                new UserChat { UserId = 2, ChatId = 9 },
-                new UserChat { UserId = 3, ChatId = 9 }
+                new UserChat { UserId = 1, ChatId = 7, LastReadAt = fixedDate },
+                new UserChat { UserId = 2, ChatId = 7, LastReadAt = fixedDate },
+                new UserChat { UserId = 1, ChatId = 8, LastReadAt = fixedDate },
+                new UserChat { UserId = 3, ChatId = 8, LastReadAt = fixedDate },
+                new UserChat { UserId = 2, ChatId = 9, LastReadAt = fixedDate },
+                new UserChat { UserId = 3, ChatId = 9, LastReadAt = fixedDate }
             );
         }
 
