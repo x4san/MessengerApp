@@ -4,15 +4,20 @@
 
 Регистрация / логин	/Controllers/AccountController.cs, /Views/Account/* sha256 coockie
 
-СЕЙЧАС ВСЁ ПОДВЯЗАНО НА ТЕСТАУТХ В АКККОНТРОЛЛЕРЕ
-!!!TODO!!! в api добавить хеширование пароля, проверку на уникальность логина и автоматическую выдачу юзер роли
-регистрация работает поля юзнейм дисплейнейм пароль (хешируется ша256) и выпадающий список отдела
-логин поддерживает сессию через куки (но перезаход в браузер сбрасывает сессию надо доработать бы по хорошему)
-хтмл нет никаких кроме тестаутх
+сделана
 
 Модели Chat, Message	/Models/Chat.cs, /Models/Message.cs
 
+сделаны
+
 SignalR чат
+
+тоже
+
+http://localhost:5000/api/*
+http://localhost:5000/account/login
+http://localhost:5000/home/index
+http://localhost:5000/admin/sqlconsole
 
 
 dotnet ef migrations add [название]
