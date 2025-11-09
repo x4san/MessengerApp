@@ -1,0 +1,212 @@
+@{
+    Layout = null;
+    ViewData["Title"] = "SQL Console (Admin)";
+}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"]</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <style>
+        :root {
+            --bg:#0e1621; --panel:#17212b; --border:#2b5278; --text:#e3eefc; --muted:#9aaec1;
+        }
+        html, body { height:100%; }
+        body {
+            margin:0; background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",sans-serif;
+        }
+        .topbar {
+            height:56px; display:flex; align-items:center; justify-content:space-between;
+            background:var(--panel); border-bottom:1px solid var(--border); padding:0 16px;
+        }
+        .container-wrap { max-width:1200px; margin:18px auto; padding:0 16px; }
+        .card {
+            background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden;
+            box-shadow:0 6px 14px rgba(0,0,0,.25);
+        }
+        .card-header { border-bottom:1px solid var(--border); }
+        .sqlarea {
+            width:100%; min-height:200px; resize:vertical; background:#0f1a25; color:var(--text);
+            border:1px solid var(--border); border-radius:10px; padding:12px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        }
+        .result {
+            background:#0f1a25; border:1px solid var(--border); border-radius:10px; padding:12px; overflow:auto;
+            max-height:50vh;
+        }
+        table.result-table { width:100%; border-collapse:separate; border-spacing:0; }
+        table.result-table th, table.result-table td {
+            border-bottom:1px solid #1f3954; padding:8px 10px; white-space:nowrap; color:#ffffff;
+        }
+        table.result-table th { position:sticky; top:0; background:#102033; z-index:1; color:#b9d2ea; }
+        .muted { color:var(--muted); }
+        .kbd { border:1px solid var(--border); background:#0f1a25; padding:.1rem .35rem; border-radius:.35rem; }
+        .footer-hint { font-size:12px; color:var(--muted); }
+
+        /* --- кнопка Выполнить --- */
+        .btn-run {
+            background-color:#2b5278;
+            border-color:#2b5278;
+            color:#ffffff; /* ✅ Белый текст */
+            font-weight:500;
+            transition:0.2s;
+        }
+        .btn-run:hover {
+            background-color:#3c6fa5;
+            border-color:#3c6fa5;
+            color:#ffffff; /* сохраняем белый текст при наведении */
+            transform:scale(1.03);
+        }
+
+        .spinner {
+            width:16px; height:16px; border:2px solid #3c6fa5; border-top-color:transparent; border-radius:50%;
+            display:inline-block; animation:spin 1s linear infinite; margin-left:8px;
+        }
+        @@keyframes spin { to { transform:rotate(360deg);} }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="d-flex align-items-center gap-2">
+            <a class="btn btn-sm btn-outline-light" href="/" style="border-color:var(--border);">← На главную</a>
+            <strong>SQL Console</strong>
+            <span class="muted">/ Admin only</span>
+        </div>
+        <div class="muted">SQLite через текущий AppDbContext</div>
+    </div>
+
+    <div class="container-wrap">
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div>
+                    Введите SQL-запрос
+                    <span class="footer-hint ms-2">(нажмите <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> для выполнения)</span>
+                </div>
+                <div id="execStatus" class="footer-hint"></div>
+            </div>
+            <div class="card-body">
+                <form id="sqlForm" class="mb-3">
+                    @Html.AntiForgeryToken()
+                    <textarea id="sql" class="sqlarea" spellcheck="false" placeholder="Примеры:
+SELECT * FROM &quot;Users&quot; LIMIT 50;
+UPDATE &quot;Users&quot; SET &quot;DisplayName&quot; = 'Test' WHERE &quot;Id&quot; = 1;
+DELETE FROM &quot;Messages&quot; WHERE &quot;Id&quot; = 123;
+PRAGMA table_info(&quot;Users&quot;);
+"></textarea>
+                    <div class="mt-3 d-flex gap-2">
+                        <button id="runBtn" class="btn btn-run" type="submit">Выполнить</button>
+                        <button id="clearBtn" class="btn btn-outline-light" type="button" style="border-color:var(--border);">Очистить</button>
+                    </div>
+                </form>
+
+                <div id="output" class="result">
+                    <div class="muted">Результат запроса появится здесь…</div>
+                </div>
+
+                <div class="mt-2 footer-hint">
+                    ⚠ Любые команды (UPDATE/DELETE/ALTER/DROP) выполняются напрямую. Доступ ограничен ролью <b>Admin</b>.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('sqlForm');
+        const sqlEl = document.getElementById('sql');
+        const out = document.getElementById('output');
+        const runBtn = document.getElementById('runBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const execStatus = document.getElementById('execStatus');
+
+        clearBtn.addEventListener('click', () => { sqlEl.value = ''; sqlEl.focus(); });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await runSql();
+        });
+
+        sqlEl.addEventListener('keydown', async (e) => {
+            if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                e.preventDefault();
+                await runSql();
+            }
+        });
+
+        async function runSql() {
+            const sql = sqlEl.value.trim();
+            if (!sql) return;
+
+            const token = form.querySelector('input[name="__RequestVerificationToken"]').value;
+            setBusy(true);
+
+            try {
+                const body = new URLSearchParams();
+                body.append('__RequestVerificationToken', token);
+                body.append('sql', sql);
+
+                const resp = await fetch('/Admin/Execute', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString()
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok || !data.ok) {
+                    renderError(data.error || ('HTTP ' + resp.status));
+                } else if (data.type === 'resultset') {
+                    renderTable(data.columns, data.rows, data.rowCount);
+                } else {
+                    renderNonQuery(data.affected);
+                }
+            } catch (err) {
+                renderError(err.message || String(err));
+            } finally {
+                setBusy(false);
+            }
+        }
+
+        function renderTable(columns, rows, rowCount) {
+            if (!columns || !columns.length) {
+                out.innerHTML = `<div class="muted">Пустой набор данных.</div>`;
+                return;
+            }
+            const th = columns.map(c => `<th>${escapeHtml(c)}</th>`).join('');
+            const trs = rows.map(r => `<tr>${
+                r.map(v => `<td>${escapeHtml(v ?? '')}</td>`).join('')
+            }</tr>`).join('');
+
+            out.innerHTML = `
+                <div class="mb-2 muted">Строк: <b>${rowCount}</b></div>
+                <table class="result-table">
+                    <thead><tr>${th}</tr></thead>
+                    <tbody>${trs}</tbody>
+                </table>`;
+        }
+
+        function renderNonQuery(affected) {
+            out.innerHTML = `<div>Команда выполнена. Затронуто строк: <b>${affected}</b></div>`;
+        }
+
+        function renderError(msg) {
+            out.innerHTML = `<div class="text-danger">Ошибка: ${escapeHtml(msg)}</div>`;
+        }
+
+        function setBusy(isBusy) {
+            runBtn.disabled = isBusy;
+            execStatus.innerHTML = isBusy ? `Выполняю… <span class="spinner"></span>` : '';
+        }
+
+        function escapeHtml(s) {
+            return String(s)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+    </script>
+</body>
+</html>
