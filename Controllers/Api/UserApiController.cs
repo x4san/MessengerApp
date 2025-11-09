@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MessengerApp.Data;
-using MessengerApp.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MessengerApp.Controllers.Api
 {
-    [Route("api/user")]
+    [Authorize]
     [ApiController]
+    [Route("api/user")]
     public class UserApiController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -16,72 +17,47 @@ namespace MessengerApp.Controllers.Api
             _context = context;
         }
 
-        // GET: api/user
+        // Все активные пользователи
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public async Task<IActionResult> GetAll()
         {
-            return await _context.Users
+            var users = await _context.Users
                 .Where(u => u.IsActive)
+                .Select(u => new { u.Id, u.Username, u.DisplayName })
                 .ToListAsync();
+
+            return Ok(users);
         }
 
-        // GET: api/user/5
+        // Конкретный пользователь
         [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var user = await _context.Users
+                .Where(u => u.IsActive && u.Id == id)
+                .Select(u => new { u.Id, u.Username, u.DisplayName })
+                .FirstOrDefaultAsync();
 
-            if (user == null || !user.IsActive)
-                return NotFound();
+            if (user == null)
+                return NotFound(new { error = "User not found" });
 
-            return user;
+            return Ok(user);
         }
 
-        // POST: api/user
-        [HttpPost]
-        public async Task<ActionResult<User>> CreateUser(User user)
-        {
-            user.CreatedAt = DateTime.UtcNow;
-            user.IsActive = true;
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, user);
-        }
-
-        // PUT: api/user/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, User updatedUser)
-        {
-            if (id != updatedUser.Id)
-                return BadRequest();
-
-            var user = await _context.Users.FindAsync(id);
-            if (user == null || !user.IsActive)
-                return NotFound();
-
-            user.Username = updatedUser.Username;
-            user.DepartmentId = updatedUser.DepartmentId;
-            user.PasswordHash = updatedUser.PasswordHash;
-
-            await _context.SaveChangesAsync();
-            return NoContent();
-        }
-
-        // DELETE (soft delete): api/user/5
+        // Деактивация (только админ)
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> SoftDeleteUser(int id)
+        public async Task<IActionResult> Deactivate(int id)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user == null || !user.IsActive)
-                return NotFound();
+            if (user == null)
+                return NotFound(new { error = "User not found" });
 
             user.IsActive = false;
             user.DeletedAt = DateTime.UtcNow;
-
             await _context.SaveChangesAsync();
-            return NoContent();
+
+            return Ok(new { message = $"User {user.Username} deactivated" });
         }
     }
 }
